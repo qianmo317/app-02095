@@ -1,0 +1,93 @@
+:root {
+  /* ── 色彩体系 ── */
+  --color-primary: #FF8C42;
+  --color-primary-light: #FFA96B;
+  --color-primary-dark: #E07030;
+  --color-primary-bg: rgba(255, 140, 66, 0.08);
+
+  --color-secondary: #4ECDC4;
+  --color-secondary-light: #7EDED8;
+  --color-secondary-dark: #38B2AA;
+
+  --color-accent: #FF6B6B;
+  --color-accent-light: #FF9B9B;
+  --color-accent-dark: #E05050;
+
+  --color-neutral-50: #FBF8F4;
+  --color-neutral-100: #F5F0E8;
+  --color-neutral-200: #EDE5D8;
+  --color-neutral-300: #DDD3C2;
+  --color-neutral-400: #BFB3A0;
+  --color-neutral-500: #9C8E7C;
+  --color-neutral-600: #7A6E5E;
+  --color-neutral-700: #5C5244;
+  --color-neutral-800: #3D372E;
+  --color-neutral-900: #231F1A;
+  --color-neutral-950: #121010;
+
+  --color-success: #27AE60;
+  --color-warning: #F39C12;
+  --color-error: #E74C3C;
+  --color-info: #3498DB;
+
+  --color-bg-page: #FBF8F4;
+  --color-bg-card: #FFFFFF;
+  --color-bg-sidebar: #231F1A;
+
+  /* ── 字体体系 ── */
+  --font-heading: 'Nunito', 'Noto Sans SC', sans-serif;
+  --font-body: 'Noto Sans SC', 'Nunito', sans-serif;
+
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+  --text-4xl: 36px;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.6;
+
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* ── 间距 ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ── 圆角 ── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* ── 阴影 ── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.15);
+
+  /* ── 动效 ── */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── 布局 ── */
+  --max-width: 1280px;
+  --sidebar-width: 240px;
+  --header-height: 64px;
+}
