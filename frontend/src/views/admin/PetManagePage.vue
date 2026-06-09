@@ -106,11 +106,11 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
-import { usePetStore } from '@/stores/pet'
+import { usePetService } from '@/composables/usePetService'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import type { Pet } from '@/mock/data'
 
-const petStore = usePetStore()
+const { petStore, addPet, updatePet, deletePet } = usePetService()
 const keyword = ref('')
 const dialogVisible = ref(false)
 const editingPet = ref<Pet | null>(null)
@@ -159,17 +159,17 @@ async function handleSubmit() {
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
   if (editingPet.value) {
-    petStore.updatePet(editingPet.value.id, { ...form })
+    updatePet(editingPet.value.id, { ...form })
     ElMessage.success('宠物信息已更新')
   } else {
-    petStore.addPet({ ...form })
+    addPet({ ...form })
     ElMessage.success('宠物已添加')
   }
   dialogVisible.value = false
 }
 
 function handleDelete(id: number) {
-  petStore.deletePet(id)
+  deletePet(id)
   ElMessage.success('宠物已删除')
 }
 </script>

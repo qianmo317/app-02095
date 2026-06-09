@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { mockPets, type Pet } from '@/mock/data'
-import { useUserStore } from './user'
 
 export const usePetStore = defineStore('pet', () => {
   const pets = ref<Pet[]>([...mockPets])
@@ -23,10 +22,6 @@ export const usePetStore = defineStore('pet', () => {
       createdAt: new Date().toISOString().split('T')[0],
     }
     pets.value.unshift(newPet)
-    const userStore = useUserStore()
-    if (userStore.currentUser) {
-      userStore.addLog(userStore.currentUser, '新增', '宠物', `新增宠物：${newPet.name}`)
-    }
     return newPet
   }
 
@@ -34,22 +29,18 @@ export const usePetStore = defineStore('pet', () => {
     const index = pets.value.findIndex(p => p.id === id)
     if (index !== -1) {
       pets.value[index] = { ...pets.value[index], ...data }
-      const userStore = useUserStore()
-      if (userStore.currentUser) {
-        userStore.addLog(userStore.currentUser, '编辑', '宠物', `更新宠物信息：${pets.value[index].name}`)
-      }
+      return pets.value[index]
     }
+    return null
   }
 
   function deletePet(id: number) {
     const pet = pets.value.find(p => p.id === id)
     if (pet) {
       pets.value = pets.value.filter(p => p.id !== id)
-      const userStore = useUserStore()
-      if (userStore.currentUser) {
-        userStore.addLog(userStore.currentUser, '删除', '宠物', `删除宠物：${pet.name}`)
-      }
+      return pet
     }
+    return null
   }
 
   function filterPets(filters: { species?: string; gender?: string; status?: string; keyword?: string }) {
