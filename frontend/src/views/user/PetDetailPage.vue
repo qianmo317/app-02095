@@ -97,15 +97,11 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { usePetStore } from '@/stores/pet'
-import { useUserStore } from '@/stores/user'
-import { useAdoptionStore } from '@/stores/adoption'
+import { useAdoptionService } from '@/composables/useAdoptionService'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 
 const route = useRoute()
-const petStore = usePetStore()
-const userStore = useUserStore()
-const adoptionStore = useAdoptionStore()
+const { petStore, userStore, adoptionStore, submitAdoption } = useAdoptionService()
 
 const detailImgLoading = ref(true)
 const pet = computed(() => petStore.getPetById(Number(route.params.id)))
@@ -135,7 +131,7 @@ async function handleSubmitAdoption() {
   if (!valid || !userStore.currentUser || !pet.value) return
   submitting.value = true
   await new Promise(r => setTimeout(r, 600))
-  adoptionStore.submitAdoption({
+  submitAdoption({
     userId: userStore.currentUser.id,
     petId: pet.value.id,
     ...adoptForm,

@@ -58,14 +58,10 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useAdoptionStore } from '@/stores/adoption'
-import { useUserStore } from '@/stores/user'
-import { usePetStore } from '@/stores/pet'
+import { useAdoptionService } from '@/composables/useAdoptionService'
 import { ElMessage } from 'element-plus'
 
-const adoptionStore = useAdoptionStore()
-const userStore = useUserStore()
-const petStore = usePetStore()
+const { adoptionStore, userStore, petStore, approveAdoption, rejectAdoption } = useAdoptionService()
 const statusFilter = ref('')
 
 const statusMap: Record<string, string> = { pending: '待审批', approved: '已通过', rejected: '已拒绝' }
@@ -84,12 +80,12 @@ function getUser(id: number) { return userStore.users.find(u => u.id === id) }
 function getPet(id: number) { return petStore.getPetById(id) }
 
 function handleApprove(id: number) {
-  adoptionStore.approveAdoption(id)
+  approveAdoption(id)
   ElMessage.success('已通过领养申请')
 }
 
 function handleReject(id: number) {
-  adoptionStore.rejectAdoption(id)
+  rejectAdoption(id)
   ElMessage.success('已拒绝领养申请')
 }
 </script>
