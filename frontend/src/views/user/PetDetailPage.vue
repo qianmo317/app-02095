@@ -134,15 +134,20 @@ async function handleSubmitAdoption() {
   const valid = await adoptFormRef.value?.validate().catch(() => false)
   if (!valid || !userStore.currentUser || !pet.value) return
   submitting.value = true
-  await new Promise(r => setTimeout(r, 600))
-  adoptionStore.submitAdoption({
-    userId: userStore.currentUser.id,
-    petId: pet.value.id,
-    ...adoptForm,
-  })
-  submitting.value = false
-  showAdoptDialog.value = false
-  ElMessage.success('领养申请已提交，请等待审核')
+  try {
+    await new Promise(r => setTimeout(r, 600))
+    adoptionStore.submitAdoption({
+      userId: userStore.currentUser.id,
+      petId: pet.value.id,
+      ...adoptForm,
+    })
+    showAdoptDialog.value = false
+    ElMessage.success('领养申请已提交，请等待审核')
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : '提交领养申请失败')
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 

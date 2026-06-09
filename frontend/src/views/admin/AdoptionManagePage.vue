@@ -84,13 +84,21 @@ function getUser(id: number) { return userStore.users.find(u => u.id === id) }
 function getPet(id: number) { return petStore.getPetById(id) }
 
 function handleApprove(id: number) {
-  adoptionStore.approveAdoption(id)
-  ElMessage.success('已通过领养申请')
+  try {
+    adoptionStore.approveAdoption(id)
+    ElMessage.success('已通过领养申请')
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : '审批操作失败')
+  }
 }
 
 function handleReject(id: number) {
-  adoptionStore.rejectAdoption(id)
-  ElMessage.success('已拒绝领养申请')
+  try {
+    adoptionStore.rejectAdoption(id)
+    ElMessage.success('已拒绝领养申请')
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : '审批操作失败')
+  }
 }
 </script>
 

@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { mockAdoptions, type Adoption } from '@/mock/data'
-import { useUserStore } from './user'
-import { usePetStore } from './pet'
+import { emitStoreEvent } from './events'
 
 export const useAdoptionStore = defineStore('adoption', () => {
   const adoptions = ref<Adoption[]>([...mockAdoptions])
@@ -21,43 +20,41 @@ export const useAdoptionStore = defineStore('adoption', () => {
       updatedAt: now,
     }
     adoptions.value.unshift(newAdoption)
-    const userStore = useUserStore()
-    const petStore = usePetStore()
-    const pet = petStore.getPetById(data.petId)
-    if (userStore.currentUser && pet) {
-      userStore.addLog(userStore.currentUser, '提交', '领养申请', `提交领养申请：${pet.name}`)
+    const result = emitStoreEvent('adoption:submitted', { userId: data.userId, petId: data.petId })
+    if (result.hasErrors) {
+      adoptions.value.shift()
+      throw new Error(`领养申请副作用执行失败：${result.errors.map(e => e.message).join('; ')}`)
     }
     return newAdoption
   }
 
   function approveAdoption(id: number) {
     const adoption = adoptions.value.find(a => a.id === id)
-    if (adoption) {
-      adoption.status = 'approved'
-      adoption.updatedAt = new Date().toISOString().split('T')[0]
-      const petStore = usePetStore()
-      petStore.updatePet(adoption.petId, { status: 'adopted' })
-      const userStore = useUserStore()
-      const pet = petStore.getPetById(adoption.petId)
-      const applicant = userStore.users.find(u => u.id === adoption.userId)
-      if (userStore.currentUser && pet && applicant) {
-        userStore.addLog(userStore.currentUser, '审批', '领养申请', `通过用户${applicant.nickname}的领养申请（${pet.name}）`)
-      }
+    if (!adoption) return
+    const prevStatus = adoption.status
+    const prevUpdatedAt = adoption.updatedAt
+    adoption.status = 'approved'
+    adoption.updatedAt = new Date().toISOString().split('T')[0]
+    const result = emitStoreEvent('adoption:approved', { applicantId: adoption.userId, petId: adoption.petId })
+    if (result.hasErrors) {
+      adoption.status = prevStatus
+      adoption.updatedAt = prevUpdatedAt
+      throw new Error(`审批通过副作用执行失败：${result.errors.map(e => e.message).join('; ')}`)
     }
   }
 
   function rejectAdoption(id: number) {
     const adoption = adoptions.value.find(a => a.id === id)
-    if (adoption) {
-      adoption.status = 'rejected'
-      adoption.updatedAt = new Date().toISOString().split('T')[0]
-      const userStore = useUserStore()
-      const petStore = usePetStore()
-      const pet = petStore.getPetById(adoption.petId)
-      const applicant = userStore.users.find(u => u.id === adoption.userId)
-      if (userStore.currentUser && pet && applicant) {
-        userStore.addLog(userStore.currentUser, '审批', '领养申请', `拒绝用户${applicant.nickname}的领养申请（${pet.name}）`)
-      }
+    if (!adoption) return
+    const prevStatus = adoption.status
+    const prevUpdatedAt = adoption.updatedAt
+    adoption.status = 'rejected'
+    adoption.updatedAt = new Date().toISOString().split('T')[0]
+    const result = emitStoreEvent('adoption:rejected', { applicantId: adoption.userId, petId: adoption.petId })
+    if (result.hasErrors) {
+      adoption.status = prevStatus
+      adoption.updatedAt = prevUpdatedAt
+      throw new Error(`审批拒绝副作用执行失败：${result.errors.map(e => e.message).join('; ')}`)
     }
   }
 
