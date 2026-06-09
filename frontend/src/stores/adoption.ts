@@ -21,44 +21,96 @@ export const useAdoptionStore = defineStore('adoption', () => {
       updatedAt: now,
     }
     adoptions.value.unshift(newAdoption)
-    const userStore = useUserStore()
-    const petStore = usePetStore()
-    const pet = petStore.getPetById(data.petId)
-    if (userStore.currentUser && pet) {
-      userStore.addLog(userStore.currentUser, '提交', '领养申请', `提交领养申请：${pet.name}`)
-    }
+
+    queueMicrotask(() => {
+      try {
+        const userStore = useUserStore()
+        const petStore = usePetStore()
+        const pet = petStore.getPetById(data.petId)
+        const applicant = userStore.users.find(u => u.id === data.userId)
+        if (applicant && pet) {
+          userStore.addLog(applicant, '提交', '领养申请', `提交领养申请：${pet.name}`)
+        }
+      } catch (e) {
+        console.warn('[adoption store] submitAdoption side-effect failed:', e)
+      }
+    })
+
     return newAdoption
   }
 
   function approveAdoption(id: number) {
     const adoption = adoptions.value.find(a => a.id === id)
-    if (adoption) {
-      adoption.status = 'approved'
-      adoption.updatedAt = new Date().toISOString().split('T')[0]
-      const petStore = usePetStore()
-      petStore.updatePet(adoption.petId, { status: 'adopted' })
-      const userStore = useUserStore()
-      const pet = petStore.getPetById(adoption.petId)
-      const applicant = userStore.users.find(u => u.id === adoption.userId)
-      if (userStore.currentUser && pet && applicant) {
-        userStore.addLog(userStore.currentUser, '审批', '领养申请', `通过用户${applicant.nickname}的领养申请（${pet.name}）`)
-      }
+    if (!adoption) return
+
+    const petStore = usePetStore()
+    const pet = petStore.getPetById(adoption.petId)
+
+    const snapshot = {
+      adoptionStatus: adoption.status,
+      adoptionUpdatedAt: adoption.updatedAt,
+      petId: adoption.petId,
+      petStatus: pet?.status ?? null,
     }
+
+    adoption.status = 'approved'
+    adoption.updatedAt = new Date().toISOString().split('T')[0]
+
+    try {
+      petStore.updatePet(adoption.petId, { status: 'adopted' }, { silent: true })
+    } catch (e) {
+      adoption.status = snapshot.adoptionStatus
+      adoption.updatedAt = snapshot.adoptionUpdatedAt
+      if (snapshot.petStatus) {
+        try {
+          petStore.updatePet(snapshot.petId, { status: snapshot.petStatus as any }, { silent: true })
+        } catch {}
+      }
+      console.error('[adoption store] approveAdoption core state update failed, rolled back:', e)
+      throw e
+    }
+
+    queueMicrotask(() => {
+      try {
+        const userStore = useUserStore()
+        const updatedPet = petStore.getPetById(adoption.petId)
+        const applicant = userStore.users.find(u => u.id === adoption.userId)
+        if (userStore.currentUser && applicant && updatedPet) {
+          userStore.addLog(userStore.currentUser, '审批', '领养申请', `通过用户${applicant.nickname}的领养申请（${updatedPet.name}）`)
+        }
+      } catch (e) {
+        console.warn('[adoption store] approveAdoption side-effect failed:', e)
+      }
+    })
   }
 
   function rejectAdoption(id: number) {
     const adoption = adoptions.value.find(a => a.id === id)
-    if (adoption) {
-      adoption.status = 'rejected'
-      adoption.updatedAt = new Date().toISOString().split('T')[0]
-      const userStore = useUserStore()
-      const petStore = usePetStore()
-      const pet = petStore.getPetById(adoption.petId)
-      const applicant = userStore.users.find(u => u.id === adoption.userId)
-      if (userStore.currentUser && pet && applicant) {
-        userStore.addLog(userStore.currentUser, '审批', '领养申请', `拒绝用户${applicant.nickname}的领养申请（${pet.name}）`)
-      }
+    if (!adoption) return
+
+    const snapshot = {
+      prevStatus: adoption.status,
+      prevUpdatedAt: adoption.updatedAt,
     }
+
+    adoption.status = 'rejected'
+    adoption.updatedAt = new Date().toISOString().split('T')[0]
+
+    queueMicrotask(() => {
+      try {
+        const userStore = useUserStore()
+        const petStore = usePetStore()
+        const pet = petStore.getPetById(adoption.petId)
+        const applicant = userStore.users.find(u => u.id === adoption.userId)
+        if (userStore.currentUser && pet && applicant) {
+          userStore.addLog(userStore.currentUser, '审批', '领养申请', `拒绝用户${applicant.nickname}的领养申请（${pet.name}）`)
+        }
+      } catch (e) {
+        adoption.status = snapshot.prevStatus
+        adoption.updatedAt = snapshot.prevUpdatedAt
+        console.error('[adoption store] rejectAdoption failed, rolled back:', e)
+      }
+    })
   }
 
   function getAdoptionsByUser(userId: number) {
