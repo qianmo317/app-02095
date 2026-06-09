@@ -4,6 +4,7 @@ import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import App from './App.vue'
 import router from './router'
+import { setupStoreBridge } from './stores/storeBridge'
 import './styles/global.scss'
 
 const app = createApp(App)
@@ -21,5 +22,6 @@ app.config.errorHandler = (err, _instance, info) => {
 }
 
 app.use(pinia)
+setupStoreBridge()
 app.use(router)
 app.mount('#app')

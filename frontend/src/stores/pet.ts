@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { mockPets, type Pet } from '@/mock/data'
-import { useUserStore } from './user'
+import { eventBus } from './eventBus'
 
 export const usePetStore = defineStore('pet', () => {
   const pets = ref<Pet[]>([...mockPets])
@@ -23,33 +23,47 @@ export const usePetStore = defineStore('pet', () => {
       createdAt: new Date().toISOString().split('T')[0],
     }
     pets.value.unshift(newPet)
-    const userStore = useUserStore()
-    if (userStore.currentUser) {
-      userStore.addLog(userStore.currentUser, '新增', '宠物', `新增宠物：${newPet.name}`)
+    const rollback = () => {
+      pets.value = pets.value.filter(p => p.id !== newPet.id)
     }
+    eventBus.emit('pet:added', { pet: newPet, rollback })
     return newPet
   }
 
   function updatePet(id: number, data: Partial<Pet>) {
     const index = pets.value.findIndex(p => p.id === id)
-    if (index !== -1) {
-      pets.value[index] = { ...pets.value[index], ...data }
-      const userStore = useUserStore()
-      if (userStore.currentUser) {
-        userStore.addLog(userStore.currentUser, '编辑', '宠物', `更新宠物信息：${pets.value[index].name}`)
+    if (index === -1) return
+    // 保存原始字段快照用于回退（仅恢复被改动的字段）
+    const original = pets.value[index]
+    const snapshot: Partial<Pet> = {}
+    ;(Object.keys(data) as Array<keyof Pet>).forEach(k => {
+      ;(snapshot as Record<string, unknown>)[k as string] = (original as Record<string, unknown>)[k as string]
+    })
+    const updated = { ...original, ...data }
+    pets.value[index] = updated
+    const rollback = () => {
+      const cur = pets.value.findIndex(p => p.id === id)
+      if (cur !== -1) {
+        pets.value[cur] = { ...pets.value[cur], ...snapshot }
       }
     }
+    eventBus.emit('pet:updated', { pet: updated, rollback })
   }
 
   function deletePet(id: number) {
-    const pet = pets.value.find(p => p.id === id)
-    if (pet) {
-      pets.value = pets.value.filter(p => p.id !== id)
-      const userStore = useUserStore()
-      if (userStore.currentUser) {
-        userStore.addLog(userStore.currentUser, '删除', '宠物', `删除宠物：${pet.name}`)
+    const index = pets.value.findIndex(p => p.id === id)
+    if (index === -1) return
+    const removed = pets.value[index]
+    pets.value = pets.value.filter(p => p.id !== id)
+    const rollback = () => {
+      // 还原到原位置，保持视图顺序稳定
+      if (!pets.value.some(p => p.id === removed.id)) {
+        const next = pets.value.slice()
+        next.splice(Math.min(index, next.length), 0, removed)
+        pets.value = next
       }
     }
+    eventBus.emit('pet:deleted', { pet: removed, rollback })
   }
 
   function filterPets(filters: { species?: string; gender?: string; status?: string; keyword?: string }) {
